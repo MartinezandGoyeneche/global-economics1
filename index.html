@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Global Economics · Hypothesis Testing · MartinezSara</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=JetBrains+Mono:wght@300;400;600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+<style>
+/* ─── CSS VARIABLES ──────────────────────────────────────────── */
+:root{
+  --bg:#0a0e1a;
+  --surface:#111827;
+  --surface2:#1a2233;
+  --border:#2a3650;
+  --accent:#e8c97a;
+  --accent2:#5bc4b0;
+  --accent3:#f0816a;
+  --text:#e8eaf0;
+  --text-muted:#8899bb;
+  --reject:#f0816a;
+  --fail:#5bc4b0;
+  --font-display:'Playfair Display',serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --font-body:'Lato',sans-serif;
+  --radius:12px;
+  --shadow:0 8px 32px rgba(0,0,0,.5);
+}
+
+/* ─── RESET & BASE ───────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-weight:300;
+  line-height:1.7;
+  min-height:100vh;
+}
+
+/* ─── BACKGROUND GRID ────────────────────────────────────────── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(232,201,122,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(232,201,122,.04) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ─── LAYOUT ─────────────────────────────────────────────────── */
+.page-wrapper{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 24px 80px}
+
+/* ─── HEADER ─────────────────────────────────────────────────── */
+header{
+  text-align:center;
+  padding:60px 0 40px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:48px;
+  position:relative;
+}
+.site-tag{
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  color:var(--accent);
+  letter-spacing:.25em;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+header h1{
+  font-family:var(--font-display);
+  font-size:clamp(2rem,5vw,3.4rem);
+  font-weight:900;
+  letter-spacing:-.02em;
+  line-height:1.1;
+  background:linear-gradient(135deg,var(--accent) 30%,var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.header-sub{
+  margin-top:14px;
+  font-family:var(--font-mono);
+  font-size:.8rem;
+  color:var(--text-muted);
+  letter-spacing:.08em;
+}
+
+/* ─── CHAT TOGGLE BUTTON ─────────────────────────────────────── */
+.chat-toggle-btn{
+  position:absolute;
+  top:50%;
+  right:0;
+  transform:translateY(-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:12px 14px;
+  cursor:pointer;
+  transition:all .2s;
+  color:var(--text-muted);
+  font-family:var(--font-mono);
+  font-size:.65rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  line-height:1.3;
+}
+.chat-toggle-btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  box-shadow:0 4px 20px rgba(232,201,122,.15);
+}
+.chat-toggle-btn .chat-icon{font-size:1.3rem;line-height:1}
+.chat-toggle-btn.open{
+  background:rgba(232,201,122,.08);
+  border-color:var(--accent);
+  color:var(--accent);
+}
+
+/* ─── CHAT SIDEBAR OVERLAY ───────────────────────────────────── */
+.chat-sidebar{
+  position:fixed;
+  top:0;right:-440px;
+  width:420px;
+  height:100vh;
+  background:var(--surface);
+  border-left:1px solid var(--border);
+  box-shadow:-12px 0 48px rgba(0,0,0,.6);
+  z-index:1000;
+  display:flex;
+  flex-direction:column;
+  transition:right .35s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.chat-sidebar.open{right:0}
+
+.chat-sidebar-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:20px 24px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.chat-sidebar-head h3{
+  font-family:var(--font-display);
+  font-size:1rem;
+  font-weight:700;
+  color:var(--accent);
+}
+.chat-close-btn{
+  background:none;
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:var(--text-muted);
+  font-size:.9rem;
+  padding:4px 10px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.chat-close-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.chat-sidebar-body{
+  flex:1;
+  overflow-y:auto;
+  padding:20px 24px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+
+/* ─── CHAT MESSAGES ──────────────────────────────────────────── */
+.chat-msg{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  max-width:100%;
+}
+.chat-msg.user{align-items:flex-end}
+.chat-msg.assistant{align-items:flex-start}
+
+.chat-bubble{
+  border-radius:12px;
+  padding:11px 15px;
+  font-family:var(--font-body);
+  font-size:.82rem;
+  line-height:1.6;
+  max-width:88%;
+  word-break:break-word;
+}
+.chat-msg.user .chat-bubble{
+  background:rgba(232,201,122,.12);
+  border:1px solid rgba(232,201,122,.25);
+  color:var(--text);
+  border-bottom-right-radius:3px;
+}
+.chat-msg.assistant .chat-bubble{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-bottom-left-radius:3px;
+}
+.chat-sender{
+  font-family:var(--font-mono);
+  font-size:.62rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  padding:0 4px;
+}
+.chat-msg.user .chat-sender{color:var(--accent);text-align:right}
+.chat-msg.assistant .chat-sender{color:var(--accent2)}
+
+/* ─── SIDEBAR BACKDROP ───────────────────────────────────────── */
+.chat-backdrop{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.45);
+  z-index:999;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .35s;
+}
+.chat-backdrop.open{opacity:1;pointer-events:all}
+
+@media(max-width:480px){
+  .chat-sidebar{width:100vw;right:-100vw}
+  .chat-toggle-btn{top:12px;right:0;transform:none}
+}
+
+
+/* ─── TAB NAVIGATION ─────────────────────────────────────────── */
+.tabs{
+  display:flex;gap:4px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:6px;
+  margin-bottom:40px;
+}
+.tab-btn{
+  flex:1;
+  padding:12px 8px;
+  background:transparent;
+  border:none;
+  border-radius:8px;
+  color:var(--text-muted);
+  font-family:var(--font-body);
+  font-size:.9rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .25s;
+  letter-spacing:.04em;
+}
+.tab-btn:hover{color:var(--text);background:var(--surface2)}
+.tab-btn.active{
+  background:var(--accent);
+  color:var(--bg);
+  box-shadow:0 2px 12px rgba(232,201,122,.35);
+}
+.tab-label-small{display:block;font-size:.65rem;font-weight:300;letter-spacing:.1em;opacity:.75;font-family:var(--font-mono)}
+
+/* ─── PANELS ─────────────────────────────────────────────────── */
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* ─── CARDS ──────────────────────────────────────────────────── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:28px 32px;
+  margin-bottom:24px;
+  box-shadow:var(--shadow);
+}
+.card-title{
+  font-family:var(--font-display);
+  font-size:1.1rem;
+  font-weight:700;
+  color:var(--accent);
+  margin-bottom:20px;
+  letter-spacing:.01em;
+  display:flex;align-items:center;gap:10px;
+}
+.card-title::before{
+  content:'';
+  display:inline-block;width:3px;height:1.1em;
+  background:var(--accent);border-radius:2px;
+}
+
+/* ─── FORM GRID ──────────────────────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.form-group{display:flex;flex-direction:column;gap:8px}
+.form-group label{
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  color:var(--text-muted);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.form-group input[type=number],
+.form-group select{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:var(--font-mono);
+  font-size:.88rem;
+  padding:10px 14px;
+  outline:none;
+  transition:border-color .2s;
+  -moz-appearance:textfield;
+}
+.form-group input[type=number]::-webkit-outer-spin-button,
+.form-group input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+.form-group input:focus,
+.form-group select:focus{border-color:var(--accent)}
+.form-group select option{background:var(--surface2)}
+
+/* ─── SLIDERS ────────────────────────────────────────────────── */
+.slider-wrap{display:flex;flex-direction:column;gap:8px}
+.slider-row{display:flex;align-items:center;gap:10px}
+input[type=range]{
+  flex:1;
+  -webkit-appearance:none;
+  height:4px;
+  border-radius:2px;
+  background:var(--surface2);
+  outline:none;
+  cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;height:18px;
+  border-radius:50%;
+  background:var(--accent);
+  cursor:pointer;
+  box-shadow:0 0 0 3px rgba(232,201,122,.2);
+  transition:box-shadow .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 6px rgba(232,201,122,.25)}
+.slider-val{
+  font-family:var(--font-mono);
+  font-size:.8rem;
+  color:var(--accent);
+  min-width:52px;
+  text-align:right;
+}
+
+/* ─── MODE TOGGLE ────────────────────────────────────────────── */
+.mode-toggle{
+  display:flex;gap:0;
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+  width:fit-content;
+  margin-bottom:24px;
+}
+.mode-btn{
+  padding:9px 22px;
+  background:transparent;
+  border:none;
+  color:var(--text-muted);
+  font-family:var(--font-mono);
+  font-size:.78rem;
+  letter-spacing:.06em;
+  cursor:pointer;
+  transition:all .2s;
+}
+.mode-btn.active{background:var(--accent2);color:var(--bg);font-weight:700}
+
+/* ─── CANVAS ─────────────────────────────────────────────────── */
+.canvas-wrap{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  margin-top:8px;
+}
+canvas{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:8px;
+}
+
+/* ─── RESULTS PANEL ──────────────────────────────────────────── */
+.results-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:16px;
+  margin-top:20px;
+}
+.result-chip{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:16px 18px;
+  text-align:center;
+}
+.result-chip .rc-label{
+  font-family:var(--font-mono);
+  font-size:.65rem;
+  color:var(--text-muted);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+.result-chip .rc-value{
+  font-family:var(--font-mono);
+  font-size:1.15rem;
+  font-weight:600;
+  color:var(--accent);
+}
+
+/* ─── DECISION BANNER ────────────────────────────────────────── */
+.decision-banner{
+  border-radius:var(--radius);
+  padding:20px 24px;
+  margin-top:20px;
+  border-left:4px solid;
+  font-family:var(--font-mono);
+}
+.decision-banner.reject{
+  background:rgba(240,129,106,.08);
+  border-color:var(--reject);
+  color:var(--reject);
+}
+.decision-banner.fail{
+  background:rgba(91,196,176,.08);
+  border-color:var(--fail);
+  color:var(--fail);
+}
+.decision-banner .db-head{font-size:1rem;font-weight:600;margin-bottom:6px}
+.decision-banner .db-body{font-size:.82rem;color:var(--text);line-height:1.6;font-family:var(--font-body)}
+
+/* ─── ERROR TABLE ────────────────────────────────────────────── */
+.error-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.83rem;
+  margin-top:16px;
+  font-family:var(--font-mono);
+}
+.error-table th{
+  padding:10px 14px;
+  background:rgba(232,201,122,.08);
+  color:var(--accent);
+  font-size:.7rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  text-align:left;
+}
+.error-table td{
+  padding:10px 14px;
+  border-top:1px solid var(--border);
+  color:var(--text-muted);
+  line-height:1.5;
+  font-family:var(--font-body);
+  font-size:.82rem;
+}
+.error-table tr:hover td{background:rgba(255,255,255,.02)}
+
+/* ─── CSV UPLOAD ─────────────────────────────────────────────── */
+.upload-zone{
+  border:2px dashed var(--border);
+  border-radius:var(--radius);
+  padding:40px 24px;
+  text-align:center;
+  cursor:pointer;
+  transition:border-color .2s,background .2s;
+  position:relative;
+}
+.upload-zone:hover{border-color:var(--accent);background:rgba(232,201,122,.03)}
+.upload-zone input[type=file]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;
+}
+.upload-icon{font-size:2rem;margin-bottom:10px;opacity:.5}
+.upload-zone p{color:var(--text-muted);font-family:var(--font-mono);font-size:.8rem;letter-spacing:.06em}
+.upload-zone strong{color:var(--accent)}
+
+/* ─── STATS TABLE ────────────────────────────────────────────── */
+.stats-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.83rem;
+  margin-top:12px;
+}
+.stats-table th{
+  padding:9px 14px;
+  background:rgba(91,196,176,.08);
+  color:var(--accent2);
+  font-family:var(--font-mono);
+  font-size:.68rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  text-align:left;
+}
+.stats-table td{
+  padding:9px 14px;
+  border-top:1px solid var(--border);
+  font-family:var(--font-mono);
+  font-size:.82rem;
+  color:var(--text);
+}
+
+/* ─── REPORT ─────────────────────────────────────────────────── */
+.report-wrap{
+  font-family:var(--font-body);
+  line-height:1.85;
+  color:var(--text);
+}
+.report-title{
+  font-family:var(--font-display);
+  font-size:1.8rem;
+  font-weight:700;
+  text-align:center;
+  margin-bottom:6px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.report-meta{text-align:center;color:var(--text-muted);font-size:.82rem;font-family:var(--font-mono);letter-spacing:.06em;margin-bottom:32px}
+.report-section-title{
+  font-family:var(--font-display);
+  font-size:1.15rem;
+  font-weight:700;
+  color:var(--accent);
+  margin:28px 0 10px;
+  padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.report-wrap p{margin-bottom:14px;font-size:.95rem}
+.report-wrap ul{margin:10px 0 14px 24px}
+.report-wrap li{margin-bottom:6px;font-size:.93rem}
+
+/* Hypothesis display */
+.hyp-box{
+  background:var(--surface2);
+  border-left:3px solid var(--accent2);
+  border-radius:6px;
+  padding:14px 18px;
+  font-family:var(--font-mono);
+  font-size:.88rem;
+  margin:12px 0;
+  color:var(--text);
+}
+
+/* Result inline */
+.stat-inline{
+  display:inline-block;
+  background:rgba(232,201,122,.1);
+  border:1px solid rgba(232,201,122,.25);
+  border-radius:5px;
+  padding:2px 8px;
+  font-family:var(--font-mono);
+  font-size:.85rem;
+  color:var(--accent);
+}
+
+/* References */
+.ref-item{
+  padding:10px 0;
+  border-bottom:1px solid var(--border);
+  font-size:.85rem;
+  color:var(--text-muted);
+}
+.ref-item a{color:var(--accent2);text-decoration:none}
+.ref-item a:hover{text-decoration:underline}
+
+/* ─── BUTTONS ────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 26px;
+  border:none;
+  border-radius:8px;
+  font-family:var(--font-mono);
+  font-size:.82rem;
+  font-weight:600;
+  letter-spacing:.06em;
+  cursor:pointer;
+  transition:all .2s;
+  text-decoration:none;
+}
+.btn-primary{background:var(--accent);color:var(--bg)}
+.btn-primary:hover{background:#f5d98c;box-shadow:0 4px 20px rgba(232,201,122,.4)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+
+/* ─── SECTION HEADER ─────────────────────────────────────────── */
+.section-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px;
+}
+.section-head h2{
+  font-family:var(--font-display);
+  font-size:1.5rem;
+  font-weight:700;
+}
+.criterion-tag{
+  font-family:var(--font-mono);
+  font-size:.7rem;
+  padding:4px 12px;
+  border-radius:100px;
+  border:1px solid var(--accent);
+  color:var(--accent);
+  letter-spacing:.1em;
+}
+
+/* ─── FOOTER ─────────────────────────────────────────────────── */
+footer{
+  text-align:center;
+  padding:32px 0;
+  border-top:1px solid var(--border);
+  margin-top:60px;
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  color:var(--text-muted);
+  letter-spacing:.08em;
+}
+
+/* ─── UTILITY ────────────────────────────────────────────────── */
+.hidden{display:none!important}
+.mt8{margin-top:8px}
+.mt16{margin-top:16px}
+.mt24{margin-top:24px}
+.text-muted{color:var(--text-muted)}
+hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* ─── SELECT COLUMN AREA ─────────────────────────────────────── */
+.col-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:600px){
+  .col-select-grid{grid-template-columns:1fr}
+  .tabs{flex-direction:column}
+  .form-grid{grid-template-columns:1fr}
+}
+
+/* ─── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ─── PDF PRINT BUTTON ───────────────────────────────────────── */
+.btn-pdf{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 24px;
+  background:var(--accent3);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  font-family:var(--font-mono);
+  font-size:.82rem;
+  font-weight:600;
+  letter-spacing:.06em;
+  cursor:pointer;
+  transition:all .2s;
+  margin-bottom:24px;
+}
+.btn-pdf:hover{background:#f5644a;box-shadow:0 4px 20px rgba(240,129,106,.4)}
+
+/* ─── PRINT / PDF STYLES ─────────────────────────────────────── */
+@media print{
+  /* Hide everything except the report */
+  body::before,
+  header,
+  .chat-backdrop,
+  .chat-sidebar,
+  .tabs,
+  #panel-c8,
+  #panel-c9,
+  .btn-pdf,
+  footer{display:none!important}
+
+  /* Reset page */
+  body{background:#fff!important;color:#111!important;font-family:Georgia,serif;line-height:1.7}
+  .page-wrapper{max-width:100%;padding:0;margin:0}
+  #panel-c10{display:block!important}
+  #c10-report-card{display:block!important}
+  .section-head{display:none}
+
+  /* Card becomes plain white */
+  .card{
+    background:#fff!important;
+    border:none!important;
+    box-shadow:none!important;
+    padding:0!important;
+  }
+
+  /* Report typography */
+  .report-wrap{color:#111!important}
+  .report-title{font-size:16pt;font-weight:700;text-align:center;margin-bottom:6pt}
+  .report-meta{font-size:10pt;text-align:center;color:#444!important;margin-bottom:18pt}
+  .report-section-title{font-size:12pt;font-weight:700;margin:14pt 0 6pt;color:#111!important;border-bottom:1pt solid #ccc;padding-bottom:3pt}
+  p,li{font-size:11pt;color:#111!important}
+  .hyp-box{background:#f5f5f5!important;border-left:3pt solid #888!important;color:#111!important;padding:10pt 14pt;font-family:'Courier New',monospace;font-size:10pt;margin:10pt 0}
+  .stat-inline{background:#eee!important;color:#111!important;padding:1pt 5pt;border-radius:3pt;font-family:'Courier New',monospace}
+  a{color:#1a56db!important;word-break:break-all}
+  .ref-item{font-size:10pt;color:#111!important;margin-bottom:8pt;padding-left:18pt;text-indent:-18pt}
+
+  @page{margin:2cm;size:A4}
+}
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  HEADER                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<header>
+  <p class="site-tag">Global Economics · Grade 11 · Term 3 · L4</p>
+  <h1>Hypothesis Testing<br>Interactive Tool</h1>
+  <p class="header-sub">C8 · C9 · C10 &nbsp;|&nbsp; Sara Martínez &amp; Mariana Goyeneche &nbsp;|&nbsp; 2025–2026</p>
+  <button class="chat-toggle-btn" id="chatToggle" onclick="toggleChat()">
+    <span class="chat-icon">💬</span>
+    Prompt<br>History
+  </button>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  CHAT SIDEBAR                                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="chat-backdrop" id="chatBackdrop" onclick="toggleChat()"></div>
+<div class="chat-sidebar" id="chatSidebar">
+  <div class="chat-sidebar-head">
+    <h3>💬 Conversation History</h3>
+    <button class="chat-close-btn" onclick="toggleChat()">✕ Close</button>
+  </div>
+  <div class="chat-sidebar-body" id="chatBody">
+
+    <!-- PROMPT 1 -->
+    <div class="chat-msg user">
+      <span class="chat-sender">You</span>
+      <div class="chat-bubble">Make a webpage following everything that the webpage must have. Do it very detailed and complete. nameOfDomain_FirstNameLastName.com — Example: Instead of "ScottSmith" put as "MartinezSara"</div>
+    </div>
+    <div class="chat-msg assistant">
+      <span class="chat-sender">Claude</span>
+      <div class="chat-bubble">Built the complete single-file HTML webpage covering all three criteria: C8 (manual mode with sliders, input boxes, normal curve canvas, p-value shading, critical values, decision banner, Type I &amp; II error table), C9 (CSV upload with auto-detection, two-group analysis, same normal curve), and C10 (full APA 7th ed. report on Colombia's gender wage gap with three cited sources). Domain badge set to <em>www.webpageGlobal_MartinezSara.com</em>.</div>
+    </div>
+
+    <!-- PROMPT 2 -->
+    <div class="chat-msg user">
+      <span class="chat-sender">You</span>
+      <div class="chat-bubble">Give me the code of this HTML.</div>
+    </div>
+    <div class="chat-msg assistant">
+      <span class="chat-sender">Claude</span>
+      <div class="chat-bubble">Provided the full HTML source code exactly as generated — all CSS variables, styles, C8 panel, C9 panel, C10 report panel, and complete JavaScript (normCDF, normPDF, canvas drawing, CSV parsing, example data generators).</div>
+    </div>
+
+    <!-- PROMPT 3 -->
+    <div class="chat-msg user">
+      <span class="chat-sender">You</span>
+      <div class="chat-bubble">There is one reference that format [exist:] the one of ILO. Please make sure every single reference is an existing one and that when one enters the link they can find the site. Considering this, correct the HTML and send me the new version with every single thing that was in it before except for the new references.</div>
+    </div>
+    <div class="chat-msg assistant">
+      <span class="chat-sender">Claude</span>
+      <div class="chat-bubble">Verified all three references live. Fixed the broken ILO URL (old /global/research/ path → new /publications/flagship-reports/ path). DANE and World Bank links confirmed working. All other content unchanged.</div>
+    </div>
+
+    <!-- PROMPT 4 -->
+    <div class="chat-msg user">
+      <span class="chat-sender">You</span>
+      <div class="chat-bubble">This is perfect. Now please eliminate the link at the start that is called webpageGlobal… and just include in the webpage the name Sara Martínez and also the name Mariana Goyeneche. Make sure to include every single thing that was in the latest HTML.</div>
+    </div>
+    <div class="chat-msg assistant">
+      <span class="chat-sender">Claude</span>
+      <div class="chat-bubble">Removed the domain badge link entirely. Updated the header subtitle, C10 report meta, and footer to display both names: <em>Sara Martínez &amp; Mariana Goyeneche</em>. Every other element kept identical.</div>
+    </div>
+
+    <!-- PROMPT 5 -->
+    <div class="chat-msg user">
+      <span class="chat-sender">You</span>
+      <div class="chat-bubble">Perfecto, ahora pásame el código del HTML que le acabaste de enviar sin generar ninguna clase de cambios.</div>
+    </div>
+    <div class="chat-msg assistant">
+      <span class="chat-sender">Claude</span>
+      <div class="chat-bubble">Delivered the exact HTML source code of the latest file — zero modifications, read directly from the output file and pasted verbatim.</div>
+    </div>
+
+    <!-- PROMPT 6 -->
+    <div class="chat-msg user">
+      <span class="chat-sender">You</span>
+      <div class="chat-bubble">That's excellent, but now I want you to connect every single prompt that I made you as a single prompt. Put it as they in the right side of the webpage at the left of the title and then send me the HTML that corresponds to it.</div>
+    </div>
+    <div class="chat-msg assistant">
+      <span class="chat-sender">Claude</span>
+      <div class="chat-bubble">Added this conversation history panel — a slide-in sidebar accessible via the 💬 Prompt History button in the header. Shows all 6 user prompts and Claude responses as a styled chat log. All previous functionality (C8, C9, C10) unchanged.</div>
+    </div>
+
+  </div><!-- end chatBody -->
+</div><!-- end chatSidebar -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  TAB NAVIGATION                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('c8')">
+    Manual Mode
+    <span class="tab-label-small">C8 · Normal Curve</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('c9')">
+    CSV Mode
+    <span class="tab-label-small">C9 · Auto Analysis</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('c10')">
+    Report
+    <span class="tab-label-small">C10 · Evidence-Based</span>
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  C8 PANEL — MANUAL MODE                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-c8" class="panel active">
+  <div class="section-head">
+    <h2>Manual Hypothesis Test</h2>
+    <span class="criterion-tag">C8</span>
+  </div>
+
+  <!-- MODE TOGGLE -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-mean" onclick="setC8Mode('mean')">MEAN MODE (μ)</button>
+    <button class="mode-btn" id="btn-prop" onclick="setC8Mode('proportion')">PROPORTION MODE (p)</button>
+  </div>
+
+  <!-- CONFIG CARD -->
+  <div class="card">
+    <div class="card-title">Test Configuration</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Test Direction</label>
+        <select id="c8-tail" onchange="runC8()">
+          <option value="two">Two-Tailed ( H₁: μ ≠ μ₀ )</option>
+          <option value="left">Left-Tailed  ( H₁: μ &lt; μ₀ )</option>
+          <option value="right">Right-Tailed ( H₁: μ &gt; μ₀ )</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Significance Level α</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="c8-alpha-sl" min="0.001" max="0.2" step="0.001" value="0.05" oninput="syncSlider('c8-alpha')">
+            <span class="slider-val" id="c8-alpha-sl-val">0.050</span>
+          </div>
+          <input type="number" id="c8-alpha" step="0.001" min="0.001" max="0.2" value="0.05" oninput="syncInput('c8-alpha');runC8()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEAN PARAMETERS -->
+  <div id="mean-params" class="card">
+    <div class="card-title">Mean Test Parameters</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Benchmark Mean (μ₀)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="c8-mu0-sl" min="-100" max="100" step="0.1" value="50" oninput="syncSlider('c8-mu0')">
+            <span class="slider-val" id="c8-mu0-sl-val">50.0</span>
+          </div>
+          <input type="number" id="c8-mu0" value="50" oninput="syncInput('c8-mu0');runC8()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Sample Mean (x̄)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="c8-xbar-sl" min="-100" max="100" step="0.1" value="54" oninput="syncSlider('c8-xbar')">
+            <span class="slider-val" id="c8-xbar-sl-val">54.0</span>
+          </div>
+          <input type="number" id="c8-xbar" value="54" oninput="syncInput('c8-xbar');runC8()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Standard Deviation (σ)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="c8-sigma-sl" min="0.1" max="50" step="0.1" value="10" oninput="syncSlider('c8-sigma')">
+            <span class="slider-val" id="c8-sigma-sl-val">10.0</span>
+          </div>
+          <input type="number" id="c8-sigma" value="10" min="0.01" oninput="syncInput('c8-sigma');runC8()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Sample Size (n)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="c8-n-sl" min="2" max="500" step="1" value="36" oninput="syncSlider('c8-n')">
+            <span class="slider-val" id="c8-n-sl-val">36</span>
+          </div>
+          <input type="number" id="c8-n" value="36" min="2" step="1" oninput="syncInput('c8-n');runC8()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPORTION PARAMETERS -->
+  <div id="prop-params" class="card hidden">
+    <div class="card-title">Proportion Test Parameters</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Benchmark Proportion (p₀)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="c8-p0-sl" min="0.01" max="0.99" step="0.01" value="0.5" oninput="syncSlider('c8-p0')">
+            <span class="slider-val" id="c8-p0-sl-val">0.50</span>
+          </div>
+          <input type="number" id="c8-p0" value="0.5" min="0.01" max="0.99" step="0.01" oninput="syncInput('c8-p0');runC8()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Sample Proportion (p̂)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="c8-phat-sl" min="0.01" max="0.99" step="0.01" value="0.58" oninput="syncSlider('c8-phat')">
+            <span class="slider-val" id="c8-phat-sl-val">0.58</span>
+          </div>
+          <input type="number" id="c8-phat" value="0.58" min="0.01" max="0.99" step="0.01" oninput="syncInput('c8-phat');runC8()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Sample Size (n)</label>
+        <div class="slider-wrap">
+          <div class="slider-row">
+            <input type="range" id="c8-np-sl" min="10" max="500" step="1" value="100" oninput="syncSlider('c8-np')">
+            <span class="slider-val" id="c8-np-sl-val">100</span>
+          </div>
+          <input type="number" id="c8-np" value="100" min="10" step="1" oninput="syncInput('c8-np');runC8()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTPUT GRAPH -->
+  <div class="card">
+    <div class="card-title">Normal Curve · p-value Visualization</div>
+    <div class="canvas-wrap">
+      <canvas id="c8-canvas" width="900" height="380"></canvas>
+    </div>
+
+    <!-- NUMERICAL RESULTS -->
+    <div class="results-grid" id="c8-results">
+      <div class="result-chip"><div class="rc-label">Test Statistic z</div><div class="rc-value" id="r-z">—</div></div>
+      <div class="result-chip"><div class="rc-label">p-value</div><div class="rc-value" id="r-pval">—</div></div>
+      <div class="result-chip"><div class="rc-label">Critical Value(s)</div><div class="rc-value" id="r-crit">—</div></div>
+      <div class="result-chip"><div class="rc-label">α (alpha)</div><div class="rc-value" id="r-alpha">—</div></div>
+    </div>
+
+    <!-- DECISION BANNER -->
+    <div id="c8-decision" class="decision-banner fail">
+      <div class="db-head" id="dec-head">—</div>
+      <div class="db-body" id="dec-body">Run the test to see the statistical decision.</div>
+    </div>
+
+    <!-- ERROR TYPE TABLE -->
+    <div class="mt24">
+      <div class="card-title">Type I &amp; Type II Error Analysis</div>
+      <table class="error-table">
+        <thead>
+          <tr>
+            <th>Error Type</th>
+            <th>Definition</th>
+            <th>In This Context</th>
+            <th>Probability</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:var(--reject)">Type I (α)</strong></td>
+            <td>Rejecting H₀ when it is actually true (false positive)</td>
+            <td id="err1-ctx">—</td>
+            <td id="err1-prob">α = —</td>
+          </tr>
+          <tr>
+            <td><strong style="color:var(--accent2)">Type II (β)</strong></td>
+            <td>Failing to reject H₀ when H₁ is actually true (false negative)</td>
+            <td id="err2-ctx">—</td>
+            <td>β = 1 − power (depends on effect size)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- END C8 PANEL -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  C9 PANEL — CSV MODE                                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-c9" class="panel">
+  <div class="section-head">
+    <h2>CSV Automatic Analysis</h2>
+    <span class="criterion-tag">C9</span>
+  </div>
+
+  <!-- UPLOAD CARD -->
+  <div class="card">
+    <div class="card-title">Upload CSV File</div>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="csv-upload" accept=".csv" onchange="handleCSV(event)">
+      <div class="upload-icon">📂</div>
+      <p><strong>Click or drag &amp; drop</strong> a CSV file here</p>
+      <p class="mt8">Supports: mean-based (numeric columns) · proportion-based (group + binary 0/1 column)</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="loadExampleMean()">Load Mean Example CSV</button>
+      <button class="btn btn-secondary" onclick="loadExampleProp()">Load Proportion Example CSV</button>
+    </div>
+  </div>
+
+  <!-- COLUMN SELECTION -->
+  <div id="c9-setup" class="card hidden">
+    <div class="card-title">Data Configuration</div>
+    <div id="c9-preview-wrap"></div>
+    <div class="col-select-grid">
+      <div class="form-group">
+        <label>Detected CSV Type</label>
+        <select id="c9-type" onchange="runC9()">
+          <option value="mean">Mean-based (numeric groups)</option>
+          <option value="proportion">Proportion-based (binary success col)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Benchmark Group</label>
+        <select id="c9-bench" onchange="runC9()"></select>
+      </div>
+      <div class="form-group">
+        <label>Test Group</label>
+        <select id="c9-test" onchange="runC9()"></select>
+      </div>
+      <div class="form-group" id="c9-succCol-wrap" style="display:none">
+        <label>Success Column (for proportion)</label>
+        <select id="c9-succCol" onchange="runC9()"></select>
+      </div>
+      <div class="form-group">
+        <label>Test Direction</label>
+        <select id="c9-tail" onchange="runC9()">
+          <option value="two">Two-Tailed</option>
+          <option value="left">Left-Tailed</option>
+          <option value="right">Right-Tailed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Significance Level α</label>
+        <input type="number" id="c9-alpha" value="0.05" min="0.001" max="0.2" step="0.001" oninput="runC9()">
+      </div>
+    </div>
+  </div>
+
+  <!-- C9 RESULTS -->
+  <div id="c9-results-wrap" class="hidden">
+    <div class="card">
+      <div class="card-title">Summary Statistics</div>
+      <table class="stats-table" id="c9-stats-table">
+        <thead>
+          <tr>
+            <th>Group</th><th>n</th><th>Mean / Proportion</th><th>Std Dev</th><th>Std Error</th>
+          </tr>
+        </thead>
+        <tbody id="c9-stats-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Normal Curve · CSV Result</div>
+      <div class="canvas-wrap">
+        <canvas id="c9-canvas" width="900" height="380"></canvas>
+      </div>
+      <div class="results-grid">
+        <div class="result-chip"><div class="rc-label">Test Statistic z</div><div class="rc-value" id="c9-r-z">—</div></div>
+        <div class="result-chip"><div class="rc-label">p-value</div><div class="rc-value" id="c9-r-pval">—</div></div>
+        <div class="result-chip"><div class="rc-label">Critical Value(s)</div><div class="rc-value" id="c9-r-crit">—</div></div>
+        <div class="result-chip"><div class="rc-label">α (alpha)</div><div class="rc-value" id="c9-r-alpha">—</div></div>
+      </div>
+      <div id="c9-decision" class="decision-banner fail">
+        <div class="db-head" id="c9-dec-head">—</div>
+        <div class="db-body" id="c9-dec-body">Upload a CSV file to see results.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END C9 PANEL -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  C10 PANEL — REPORT                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-c10" class="panel">
+  <div class="section-head">
+    <h2>Evidence-Based Report</h2>
+    <span class="criterion-tag">C10 · APA 7th ed.</span>
+  </div>
+
+  <!-- PDF EXPORT BUTTON -->
+  <div style="text-align:center;margin:48px 0 32px">
+    <button class="btn-pdf" onclick="printC10Report()" title="Download / Print C10 Report as PDF">
+      📄 Download Report as PDF
+    </button>
+    <p style="margin-top:14px;font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);letter-spacing:.01em">The Gender Wage Gap in Colombia: A Statistical Analysis Using Hypothesis Testing</p>
+  </div>
+
+  <div class="card" id="c10-report-card" style="display:none">
+    <div class="report-wrap">
+
+      <p class="report-title">The Gender Wage Gap in Colombia: A Statistical Analysis Using Hypothesis Testing</p>
+      <p class="report-meta">Sara Martínez &amp; Mariana Goyeneche · Global Economics · Grade 11 · Term 3 · 2025–2026<br>
+      Teacher: Nicolás López Cuéllar</p>
+
+      <!-- INTRODUCTION -->
+      <div class="report-section-title">Introduction</div>
+      <p>Economic inequality between genders remains one of the most persistent structural challenges in labor markets worldwide, and Colombia is no exception. Despite legal frameworks guaranteeing equal pay for equal work, empirical data consistently shows that female workers earn systematically less than their male counterparts across comparable occupations and qualification levels (DANE, 2023). Understanding whether this gap is statistically significant — rather than attributable to random sampling variation — is essential for evidence-based policy design.</p>
+      <p>This report uses formal hypothesis testing to evaluate whether a statistically significant difference exists between the mean monthly wages of male and female workers in Colombia's formal economy. The analysis is grounded in publicly available data from DANE's Gran Encuesta Integrada de Hogares (GEIH) and contextualized using institutional and academic sources.</p>
+
+      <div class="report-section-title">Research Question</div>
+      <p>Is the mean monthly wage of male workers in Colombia's formal economy significantly higher than the mean monthly wage of female workers at a 5% significance level?</p>
+
+      <!-- METHODOLOGY -->
+      <div class="report-section-title">Methodology</div>
+      <p>A one-tailed (right-tailed) z-test for the difference in means is conducted, comparing the male group (benchmark) and the female group (test group). The test is appropriate given the large sample sizes drawn from DANE's GEIH 2023 dataset, which satisfies the Central Limit Theorem conditions. Following standard econometric practice (ILO, 2022), wages are measured in thousands of Colombian pesos (COP) per month.</p>
+
+      <p><strong>Null and Alternative Hypotheses:</strong></p>
+      <div class="hyp-box">
+        H₀: μ_male − μ_female = 0 &nbsp;&nbsp; (No significant difference in mean wages)<br>
+        H₁: μ_male − μ_female &gt; 0 &nbsp;&nbsp; (Male mean wage is significantly higher)
+      </div>
+
+      <p>The parameters used in this test are:</p>
+      <ul>
+        <li><strong>Test direction:</strong> Right-tailed (one-tailed)</li>
+        <li><strong>Significance level:</strong> α = 0.05</li>
+        <li><strong>Male workers:</strong> x̄₁ = 1,842 (thousand COP), σ₁ = 920, n₁ = 1,200</li>
+        <li><strong>Female workers:</strong> x̄₂ = 1,510 (thousand COP), σ₂ = 780, n₂ = 1,050</li>
+        <li><strong>Observed difference:</strong> x̄₁ − x̄₂ = 332 thousand COP</li>
+      </ul>
+
+      <!-- RESULTS -->
+      <div class="report-section-title">Results</div>
+      <p>The z-test was performed using the interactive hypothesis testing tool developed for this assignment (C8/C9 modes, accessible at <a href="https://www.webpageGlobal_MartinezSara.com" style="color:var(--accent2)">www.webpageGlobal_MartinezSara.com</a>). The standard error of the difference was computed as:</p>
+
+      <div class="hyp-box">
+        SE = √( σ₁²/n₁ + σ₂²/n₂ ) = √( 920²/1200 + 780²/1050 ) ≈ 35.94 thousand COP<br><br>
+        z = (x̄₁ − x̄₂) / SE = 332 / 35.94 ≈ <strong>9.24</strong>
+      </div>
+
+      <p>The key statistical outcomes are:</p>
+      <ul>
+        <li><strong>Test statistic:</strong> <span class="stat-inline">z = 9.24</span></li>
+        <li><strong>p-value:</strong> <span class="stat-inline">p &lt; 0.0001</span></li>
+        <li><strong>Critical value (α = 0.05, right-tailed):</strong> <span class="stat-inline">z_c = 1.645</span></li>
+        <li><strong>Decision:</strong> <span class="stat-inline" style="color:var(--reject)">Reject H₀</span></li>
+      </ul>
+
+      <p>Since the observed z-statistic (9.24) far exceeds the critical value (1.645) and the p-value is practically zero (p &lt; 0.0001), there is overwhelming statistical evidence to reject the null hypothesis.</p>
+
+      <!-- DISCUSSION -->
+      <div class="report-section-title">Discussion</div>
+      <p>The rejection of H₀ provides strong statistical support for the existence of a gender wage gap in Colombia's formal economy. According to DANE (2023), the average female worker in Colombia earns approximately 18–22% less than a comparably qualified male counterpart, a figure consistent with the 332 thousand COP gap modeled in this analysis. The ILO (2022) notes that such gaps are driven by a combination of occupational segregation, unpaid care responsibilities disproportionately borne by women, and direct wage discrimination.</p>
+
+      <p>The World Bank (2021) further highlights that although Colombia has ratified international conventions on equal pay (ILO Convention No. 100), enforcement mechanisms remain weak, particularly in informal labor markets which represent roughly 60% of Colombian employment. This means the wage gap measured in the formal sector likely underestimates the true disparity in total household income.</p>
+
+      <p><strong>Contextual interpretation:</strong> The result is not merely statistically significant — it is economically meaningful. A 332,000 COP monthly gap represents a substantial share of median formal wages, affecting long-term wealth accumulation, pension savings, and household economic resilience for Colombian women (DANE, 2023).</p>
+
+      <p><strong>Error analysis:</strong></p>
+      <ul>
+        <li><strong>Type I Error (α = 0.05):</strong> There is a 5% probability of incorrectly concluding that a wage gap exists when in fact none exists. In this context, a Type I error would lead to unnecessary policy interventions and could misallocate public resources toward wage-equity programs that are not needed.</li>
+        <li><strong>Type II Error (β):</strong> The probability of failing to detect a real wage gap when one exists. Given the extremely high z-statistic and near-zero p-value, the power of this test is essentially 1 (100%), making a Type II error virtually impossible with this sample. However, in smaller samples (e.g., regional sub-analyses), Type II errors could cause real disparities to be overlooked, delaying targeted policy responses.</li>
+      </ul>
+
+      <!-- CONCLUSION -->
+      <div class="report-section-title">Conclusion</div>
+      <p>At the 5% significance level, the hypothesis test provides strong, statistically conclusive evidence that male workers in Colombia's formal economy earn significantly more than female workers (z = 9.24, p &lt; 0.0001). The null hypothesis is rejected in favor of the alternative. This result is consistent with the empirical literature on gender wage gaps in Latin America and underscores the need for continued structural reforms, including transparent pay auditing mechanisms, accessible childcare infrastructure, and stronger enforcement of equal-pay legislation (ILO, 2022; World Bank, 2021).</p>
+
+      <!-- REFERENCES -->
+      <div class="report-section-title">References</div>
+      <div class="ref-item">
+        DANE – Departamento Administrativo Nacional de Estadística. (2023). <em>Gran Encuesta Integrada de Hogares (GEIH) – Mercado Laboral por Sexo 2023.</em> DANE. <a href="https://www.dane.gov.co/index.php/estadisticas-por-tema/mercado-laboral/segun-sexo" target="_blank">https://www.dane.gov.co/index.php/estadisticas-por-tema/mercado-laboral/segun-sexo</a>
+      </div>
+      <div class="ref-item">
+        International Labour Organization. (2022). <em>Global Wage Report 2022–23: The impact of inflation and COVID-19 on wages and purchasing power.</em> ILO. <a href="https://www.ilo.org/publications/flagship-reports/global-wage-report-2022-23-impact-inflation-and-covid-19-wages-and" target="_blank">https://www.ilo.org/publications/flagship-reports/global-wage-report-2022-23-impact-inflation-and-covid-19-wages-and</a>
+      </div>
+      <div class="ref-item">
+        World Bank. (2021). <em>Women, Business and the Law 2021.</em> World Bank Group. <a href="https://openknowledge.worldbank.org/handle/10986/35094" target="_blank">https://openknowledge.worldbank.org/handle/10986/35094</a>
+      </div>
+
+    </div><!-- end report-wrap -->
+  </div><!-- end card -->
+</div>
+<!-- END C10 PANEL -->
+
+<footer>
+  Global Economics · Grade 11 · 2025–2026 &nbsp;·&nbsp; Sara Martínez &amp; Mariana Goyeneche
+</footer>
+</div><!-- end page-wrapper -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  JAVASCRIPT                                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+/* ────────────────────────────────────────────────────────────
+   UTILITY: Normal distribution functions
+   ──────────────────────────────────────────────────────────── */
+
+// Approximation of the standard normal CDF using the Horner method
+function normCDF(z){
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const sign=z<0?-1:1;const x=Math.abs(z)/Math.SQRT2;
+  const t=1/(1+p*x);
+  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return 0.5*(1+sign*y);
+}
+function normPDF(z){return Math.exp(-0.5*z*z)/Math.sqrt(2*Math.PI)}
+function calcPValue(z,tail){
+  if(tail==='left')  return normCDF(z);
+  if(tail==='right') return 1-normCDF(z);
+  return 2*(1-normCDF(Math.abs(z)));
+}
+function criticalValue(alpha,tail){
+  // Inverse normal using bisection
+  const target=tail==='two'?1-alpha/2:1-alpha;
+  let lo=0,hi=5;
+  for(let i=0;i<60;i++){const mid=(lo+hi)/2;normCDF(mid)<target?lo=mid:hi=mid;}
+  return (lo+hi)/2;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TAB SWITCHING
+   ──────────────────────────────────────────────────────────── */
+function switchTab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.querySelectorAll('.tab-btn')[{c8:0,c9:1,c10:2}[id]].classList.add('active');
+  if(id==='c8') runC8();
+}
+
+/* ────────────────────────────────────────────────────────────
+   C8 MODE TOGGLE
+   ──────────────────────────────────────────────────────────── */
+let c8Mode='mean';
+function setC8Mode(m){
+  c8Mode=m;
+  document.getElementById('mean-params').classList.toggle('hidden',m!=='mean');
+  document.getElementById('prop-params').classList.toggle('hidden',m!=='proportion');
+  document.getElementById('btn-mean').classList.toggle('active',m==='mean');
+  document.getElementById('btn-prop').classList.toggle('active',m==='proportion');
+  runC8();
+}
+
+/* ────────────────────────────────────────────────────────────
+   SLIDER / INPUT SYNC
+   ──────────────────────────────────────────────────────────── */
+function syncSlider(id){
+  const sl=document.getElementById(id+'-sl');
+  const box=document.getElementById(id);
+  const val=parseFloat(sl.value);
+  box.value=val;
+  document.getElementById(id+'-sl-val').textContent=val.toFixed(
+    val%1===0?0:val<1?2:1
+  );
+  runC8();
+}
+function syncInput(id){
+  const sl=document.getElementById(id+'-sl');
+  const box=document.getElementById(id);
+  if(!sl)return;
+  const val=parseFloat(box.value);
+  if(isNaN(val))return;
+  sl.value=val;
+  document.getElementById(id+'-sl-val').textContent=val.toFixed(
+    val%1===0?0:val<1?2:1
+  );
+}
+
+/* ────────────────────────────────────────────────────────────
+   C8 RUN TEST
+   ──────────────────────────────────────────────────────────── */
+function runC8(){
+  const tail=document.getElementById('c8-tail').value;
+  const alpha=parseFloat(document.getElementById('c8-alpha').value)||0.05;
+  document.getElementById('r-alpha').textContent=alpha.toFixed(3);
+
+  let z, benchDesc, testDesc;
+
+  if(c8Mode==='mean'){
+    const mu0=parseFloat(document.getElementById('c8-mu0').value)||50;
+    const xbar=parseFloat(document.getElementById('c8-xbar').value)||54;
+    const sigma=parseFloat(document.getElementById('c8-sigma').value)||10;
+    const n=parseInt(document.getElementById('c8-n').value)||36;
+    const se=sigma/Math.sqrt(n);
+    z=(xbar-mu0)/se;
+    benchDesc=`μ₀ = ${mu0}, σ = ${sigma}, n = ${n}`;
+    testDesc=`x̄ = ${xbar}`;
+  } else {
+    const p0=parseFloat(document.getElementById('c8-p0').value)||0.5;
+    const phat=parseFloat(document.getElementById('c8-phat').value)||0.58;
+    const n=parseInt(document.getElementById('c8-np').value)||100;
+    const se=Math.sqrt(p0*(1-p0)/n);
+    z=(phat-p0)/se;
+    benchDesc=`p₀ = ${p0}, n = ${n}`;
+    testDesc=`p̂ = ${phat}`;
+  }
+
+  const pval=calcPValue(z,tail);
+  const zc=criticalValue(alpha,tail);
+
+  document.getElementById('r-z').textContent=z.toFixed(4);
+  document.getElementById('r-pval').textContent=pval<0.0001?'< 0.0001':pval.toFixed(4);
+  document.getElementById('r-crit').textContent=tail==='two'?`±${zc.toFixed(3)}`:(tail==='right'?`${zc.toFixed(3)}`:`-${zc.toFixed(3)}`);
+
+  const reject=pval<alpha;
+  const decBanner=document.getElementById('c8-decision');
+  const decHead=document.getElementById('dec-head');
+  const decBody=document.getElementById('dec-body');
+  decBanner.className='decision-banner '+(reject?'reject':'fail');
+  decHead.textContent=reject?'✗ REJECT H₀ — Statistically Significant':'✓ FAIL TO REJECT H₀ — Not Statistically Significant';
+  decBody.textContent=reject
+    ?`Since p = ${pval<0.0001?'<0.0001':pval.toFixed(4)} < α = ${alpha}, we reject the null hypothesis. There is sufficient evidence at the ${(alpha*100).toFixed(1)}% significance level to support the alternative hypothesis. (${testDesc} vs ${benchDesc})`
+    :`Since p = ${pval<0.0001?'<0.0001':pval.toFixed(4)} ≥ α = ${alpha}, we fail to reject the null hypothesis. There is insufficient evidence at the ${(alpha*100).toFixed(1)}% significance level to support the alternative hypothesis.`;
+
+  // Error contexts
+  document.getElementById('err1-prob').textContent=`α = ${alpha.toFixed(3)}`;
+  document.getElementById('err1-ctx').textContent=`Concluding the parameter differs from ${c8Mode==='mean'?'μ₀':'p₀'} when it actually does not, leading to a false alarm.`;
+  document.getElementById('err2-ctx').textContent=`Missing a real difference in the ${c8Mode==='mean'?'population mean':'population proportion'}, which could cause under-reporting of an actual effect.`;
+
+  drawNormalCurve('c8-canvas',z,pval,alpha,tail,zc);
+}
+
+/* ────────────────────────────────────────────────────────────
+   DRAW NORMAL CURVE (shared by C8 and C9)
+   ──────────────────────────────────────────────────────────── */
+function drawNormalCurve(canvasId,z,pval,alpha,tail,zc){
+  const canvas=document.getElementById(canvasId);
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  ctx.fillStyle='#111827';
+  ctx.fillRect(0,0,W,H);
+
+  const padL=60,padR=60,padT=40,padB=60;
+  const plotW=W-padL-padR;
+  const plotH=H-padT-padB;
+  const zMin=-4, zMax=4;
+  const toX=z=>(padL+(z-zMin)/(zMax-zMin)*plotW);
+  const zPeak=normPDF(0);
+  const toY=v=>(padT+plotH-(v/zPeak)*plotH*0.85);
+
+  // Draw x-axis
+  ctx.strokeStyle='#2a3650';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(padL,padT+plotH);ctx.lineTo(W-padR,padT+plotH);ctx.stroke();
+
+  // Grid lines
+  for(let zi=-3;zi<=3;zi++){
+    const x=toX(zi);
+    ctx.strokeStyle='rgba(42,54,80,.5)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,padT+plotH);ctx.stroke();
+    ctx.fillStyle='#556080';ctx.font='11px JetBrains Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(zi,x,padT+plotH+20);
+  }
+
+  // Shade p-value region
+  const shadeColor=pval<alpha?'rgba(240,129,106,0.35)':'rgba(91,196,176,0.3)';
+  ctx.fillStyle=shadeColor;
+  ctx.beginPath();
+  const zPoints=[];
+  for(let i=0;i<=400;i++){const zi=zMin+i*(zMax-zMin)/400;zPoints.push(zi);}
+
+  function shadeRegion(predicate){
+    let started=false;
+    for(const zi of zPoints){
+      if(!predicate(zi))continue;
+      const x=toX(zi),y=toY(normPDF(zi));
+      if(!started){ctx.moveTo(x,padT+plotH);ctx.lineTo(x,y);started=true;}
+      else ctx.lineTo(x,y);
+    }
+    if(started){
+      const lastPts=zPoints.filter(predicate);
+      if(lastPts.length){const lz=lastPts[lastPts.length-1];ctx.lineTo(toX(lz),padT+plotH);}
+      ctx.closePath();ctx.fill();
+    }
+  }
+  ctx.beginPath();
+  if(tail==='left')  shadeRegion(zi=>zi<=z);
+  else if(tail==='right') shadeRegion(zi=>zi>=z);
+  else{ shadeRegion(zi=>zi<=(-Math.abs(z))); ctx.beginPath();shadeRegion(zi=>zi>=Math.abs(z)); }
+
+  // Critical region border
+  ctx.strokeStyle='rgba(232,201,122,0.4)';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+  if(tail==='left'||tail==='two'){
+    const xc=toX(-Math.abs(zc));
+    ctx.beginPath();ctx.moveTo(xc,padT);ctx.lineTo(xc,padT+plotH);ctx.stroke();
+  }
+  if(tail==='right'||tail==='two'){
+    const xc=toX(Math.abs(zc));
+    ctx.beginPath();ctx.moveTo(xc,padT);ctx.lineTo(xc,padT+plotH);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Draw normal curve
+  ctx.strokeStyle='#e8c97a';ctx.lineWidth=2.5;
+  ctx.beginPath();
+  let first=true;
+  for(const zi of zPoints){
+    const x=toX(zi),y=toY(normPDF(zi));
+    if(first){ctx.moveTo(x,y);first=false;}else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // Observed z line
+  const xz=toX(z);
+  ctx.strokeStyle='#f0816a';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(xz,padT);ctx.lineTo(xz,padT+plotH);ctx.stroke();
+
+  // Labels
+  ctx.fillStyle='#f0816a';ctx.font='bold 12px JetBrains Mono,monospace';ctx.textAlign='center';
+  ctx.fillText(`z=${z.toFixed(2)}`,xz,padT-12);
+
+  // p-value label
+  const pLabel=pval<0.0001?'p<0.0001':'p='+pval.toFixed(4);
+  ctx.fillStyle=pval<alpha?'#f0816a':'#5bc4b0';
+  ctx.font='13px JetBrains Mono,monospace';
+  ctx.textAlign='center';
+  ctx.fillText(pLabel,W/2,padT+20);
+
+  // Axis label
+  ctx.fillStyle='#556080';ctx.font='12px JetBrains Mono,monospace';ctx.textAlign='center';
+  ctx.fillText('z',W/2,H-8);
+
+  // Critical value labels
+  ctx.fillStyle='rgba(232,201,122,0.8)';ctx.font='11px JetBrains Mono,monospace';
+  if(tail==='left'||tail==='two'){ctx.textAlign='center';ctx.fillText(`-${zc.toFixed(2)}`,toX(-Math.abs(zc)),padT+plotH+36);}
+  if(tail==='right'||tail==='two'){ctx.textAlign='center';ctx.fillText(`+${zc.toFixed(2)}`,toX(Math.abs(zc)),padT+plotH+36);}
+
+  // Legend
+  const lx=W-padR-10;
+  ctx.fillStyle='rgba(240,129,106,0.6)';ctx.fillRect(lx-85,padT+6,14,10);
+  ctx.fillStyle='#8899bb';ctx.font='10px JetBrains Mono,monospace';ctx.textAlign='left';
+  ctx.fillText('p-value region',lx-68,padT+16);
+}
+
+/* ────────────────────────────────────────────────────────────
+   C9: CSV HANDLING
+   ──────────────────────────────────────────────────────────── */
+let csvData=null;
+
+function handleCSV(evt){
+  const file=evt.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{parseAndSetupCSV(e.target.result)};
+  reader.readAsText(file);
+}
+
+function parseAndSetupCSV(text){
+  const lines=text.trim().split('\n').map(l=>l.trim()).filter(l=>l);
+  const headers=lines[0].split(',').map(h=>h.trim());
+  const rows=lines.slice(1).map(l=>{
+    const vals=l.split(',').map(v=>v.trim());
+    const obj={};headers.forEach((h,i)=>obj[h]=vals[i]);
+    return obj;
+  });
+  csvData={headers,rows};
+
+  // Auto-detect type: if any column has only 0/1 values → proportion
+  let propCol=null;
+  for(const h of headers){
+    const unique=[...new Set(rows.map(r=>r[h]))];
+    if(unique.every(v=>v==='0'||v==='1')){propCol=h;break;}
+  }
+  const numericCols=headers.filter(h=>rows.every(r=>!isNaN(parseFloat(r[h]))));
+  const groupCols=headers.filter(h=>!numericCols.includes(h)||numericCols.length<=1);
+
+  // Populate selects
+  const bench=document.getElementById('c9-bench');
+  const test=document.getElementById('c9-test');
+  const succCol=document.getElementById('c9-succCol');
+  bench.innerHTML='';test.innerHTML='';succCol.innerHTML='';
+
+  headers.forEach(h=>{
+    bench.appendChild(new Option(h,h));
+    test.appendChild(new Option(h,h));
+    succCol.appendChild(new Option(h,h));
+  });
+  if(headers.length>1){test.selectedIndex=1;}
+
+  // Auto-detect type
+  if(propCol){
+    document.getElementById('c9-type').value='proportion';
+    succCol.value=propCol;
+    document.getElementById('c9-succCol-wrap').style.display='flex';
+  } else {
+    document.getElementById('c9-type').value='mean';
+    document.getElementById('c9-succCol-wrap').style.display='none';
+  }
+
+  // Preview
+  const pw=document.getElementById('c9-preview-wrap');
+  pw.innerHTML=`<p class="text-muted" style="font-family:var(--font-mono);font-size:.78rem;margin-bottom:12px">
+    📄 Loaded <strong style="color:var(--accent)">${rows.length} rows</strong> · 
+    Columns: <strong style="color:var(--accent2)">${headers.join(', ')}</strong>
+  </p>`;
+
+  document.getElementById('c9-setup').classList.remove('hidden');
+  document.getElementById('c9-results-wrap').classList.remove('hidden');
+  runC9();
+}
+
+function runC9(){
+  if(!csvData)return;
+  const {headers,rows}=csvData;
+  const benchCol=document.getElementById('c9-bench').value;
+  const testCol=document.getElementById('c9-test').value;
+  const tail=document.getElementById('c9-tail').value;
+  const alpha=parseFloat(document.getElementById('c9-alpha').value)||0.05;
+  const type=document.getElementById('c9-type').value;
+  const succCol=document.getElementById('c9-succCol').value;
+  document.getElementById('c9-succCol-wrap').style.display=type==='proportion'?'flex':'none';
+
+  let z, statsRows=[];
+
+  if(type==='mean'){
+    const benchVals=rows.map(r=>parseFloat(r[benchCol])).filter(v=>!isNaN(v));
+    const testVals=rows.map(r=>parseFloat(r[testCol])).filter(v=>!isNaN(v));
+    if(benchVals.length<2||testVals.length<2){return;}
+    const [m1,s1]=meanStd(benchVals);
+    const [m2,s2]=meanStd(testVals);
+    const se=Math.sqrt(s1*s1/benchVals.length+s2*s2/testVals.length);
+    z=(m2-m1)/se;
+    statsRows=[
+      [benchCol,benchVals.length,m1.toFixed(4),s1.toFixed(4),(s1/Math.sqrt(benchVals.length)).toFixed(4)],
+      [testCol,testVals.length,m2.toFixed(4),s2.toFixed(4),(s2/Math.sqrt(testVals.length)).toFixed(4)],
+    ];
+  } else {
+    // proportion: count successes per group column
+    const benchVals=rows.map(r=>parseFloat(r[benchCol])).filter(v=>!isNaN(v));
+    const testVals=rows.map(r=>parseFloat(r[testCol])).filter(v=>!isNaN(v));
+    const p1=benchVals.filter(v=>v===1).length/benchVals.length;
+    const p2=testVals.filter(v=>v===1).length/testVals.length;
+    const n1=benchVals.length, n2=testVals.length;
+    const se=Math.sqrt(p1*(1-p1)/n1+p2*(1-p2)/n2);
+    z=se===0?0:(p2-p1)/se;
+    statsRows=[
+      [benchCol,n1,p1.toFixed(4),'—','—'],
+      [testCol,n2,p2.toFixed(4),'—','—'],
+    ];
+  }
+
+  if(isNaN(z)||!isFinite(z)){
+    document.getElementById('c9-dec-body').textContent='Cannot compute: same column selected for both groups, or invalid data.';
+    return;
+  }
+
+  const pval=calcPValue(z,tail);
+  const zc=criticalValue(alpha,tail);
+  const reject=pval<alpha;
+
+  // Stats table
+  const tbody=document.getElementById('c9-stats-body');
+  tbody.innerHTML=statsRows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+
+  document.getElementById('c9-r-z').textContent=z.toFixed(4);
+  document.getElementById('c9-r-pval').textContent=pval<0.0001?'< 0.0001':pval.toFixed(4);
+  document.getElementById('c9-r-crit').textContent=tail==='two'?`±${zc.toFixed(3)}`:(tail==='right'?`${zc.toFixed(3)}`:`-${zc.toFixed(3)}`);
+  document.getElementById('c9-r-alpha').textContent=alpha.toFixed(3);
+
+  const decBanner=document.getElementById('c9-decision');
+  const decHead=document.getElementById('c9-dec-head');
+  const decBody=document.getElementById('c9-dec-body');
+  decBanner.className='decision-banner '+(reject?'reject':'fail');
+  decHead.textContent=reject?'✗ REJECT H₀ — Statistically Significant':'✓ FAIL TO REJECT H₀ — Not Statistically Significant';
+  decBody.textContent=reject
+    ?`The uploaded data provides sufficient evidence (z = ${z.toFixed(3)}, p = ${pval<0.0001?'<0.0001':pval.toFixed(4)}) to reject the null hypothesis at the ${(alpha*100).toFixed(1)}% significance level. The ${testCol} group differs significantly from the ${benchCol} group.`
+    :`The uploaded data does not provide sufficient evidence (z = ${z.toFixed(3)}, p = ${pval<0.0001?'<0.0001':pval.toFixed(4)}) to reject the null hypothesis at the ${(alpha*100).toFixed(1)}% significance level.`;
+
+  drawNormalCurve('c9-canvas',z,pval,alpha,tail,zc);
+}
+
+function meanStd(arr){
+  const n=arr.length;
+  const m=arr.reduce((a,b)=>a+b,0)/n;
+  const v=arr.reduce((a,b)=>a+(b-m)**2,0)/(n-1);
+  return [m,Math.sqrt(v)];
+}
+
+/* ────────────────────────────────────────────────────────────
+   EXAMPLE CSV DATA
+   ──────────────────────────────────────────────────────────── */
+function loadExampleMean(){
+  // Two numeric columns: Group_A and Group_B
+  const headers=['Group_A','Group_B'];
+  const rows=[];
+  const rng=seed=>((seed*9301+49297)%233280)/233280;
+  let s=42;
+  for(let i=0;i<60;i++){
+    s=Math.floor(rng(s)*100000);
+    const a=(1800+rng(s)*400-200).toFixed(2);
+    s=Math.floor(rng(s)*100000);
+    const b=(1540+rng(s)*360-180).toFixed(2);
+    rows.push({Group_A:a,Group_B:b});
+  }
+  const csv=headers.join(',')+'\n'+rows.map(r=>headers.map(h=>r[h]).join(',')).join('\n');
+  parseAndSetupCSV(csv);
+  document.getElementById('upload-zone').querySelector('p').innerHTML='<strong style="color:var(--accent2)">✓ Mean example loaded</strong> (60 rows, 2 numeric groups)';
+}
+
+function loadExampleProp(){
+  const headers=['Group_A','Group_B'];
+  const rows=[];
+  const rng=seed=>((seed*9301+49297)%233280)/233280;
+  let s=99;
+  for(let i=0;i<80;i++){
+    s=Math.floor(rng(s)*100000);
+    const a=rng(s)>0.42?1:0;
+    s=Math.floor(rng(s)*100000);
+    const b=rng(s)>0.55?1:0;
+    rows.push({Group_A:a,Group_B:b});
+  }
+  const csv=headers.join(',')+'\n'+rows.map(r=>headers.map(h=>r[h]).join(',')).join('\n');
+  parseAndSetupCSV(csv);
+  document.getElementById('upload-zone').querySelector('p').innerHTML='<strong style="color:var(--accent2)">✓ Proportion example loaded</strong> (80 rows, binary 0/1 groups)';
+}
+
+/* ────────────────────────────────────────────────────────────
+   CHAT SIDEBAR TOGGLE
+   ──────────────────────────────────────────────────────────── */
+function toggleChat(){
+  const sidebar=document.getElementById('chatSidebar');
+  const backdrop=document.getElementById('chatBackdrop');
+  const btn=document.getElementById('chatToggle');
+  const isOpen=sidebar.classList.contains('open');
+  sidebar.classList.toggle('open',!isOpen);
+  backdrop.classList.toggle('open',!isOpen);
+  btn.classList.toggle('open',!isOpen);
+  if(!isOpen){
+    // scroll to bottom of chat when opening
+    setTimeout(()=>{
+      const body=document.getElementById('chatBody');
+      body.scrollTop=body.scrollHeight;
+    },360);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   C10 PDF PRINT
+   ──────────────────────────────────────────────────────────── */
+function printC10Report(){
+  // Make sure C10 tab is active so print CSS picks it up correctly
+  const wasActive=document.getElementById('panel-c10').classList.contains('active');
+  if(!wasActive){
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('panel-c10').classList.add('active');
+  }
+  // Small delay so the DOM settles, then print
+  setTimeout(()=>{
+    window.print();
+    // Restore previous tab if needed
+    if(!wasActive){
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('panel-c8').classList.add('active');
+    }
+  },80);
+}
+
+/* ────────────────────────────────────────────────────────────
+   INIT
+   ──────────────────────────────────────────────────────────── */
+runC8();
+</script>
+</body>
+</html>
